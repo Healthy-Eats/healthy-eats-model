@@ -8,7 +8,7 @@ from tensorflow.keras.applications.efficientnet import preprocess_input
 app = FastAPI()
 
 # path to tflite model
-model_path = "model/model.tflite"
+model_path = "model/model_update_1.tflite"
 
 # list of class name
 class_names = [
