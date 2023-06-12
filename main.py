@@ -4,10 +4,15 @@ import io
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications.efficientnet import preprocess_input
+from google.cloud import storage
 
 app = FastAPI()
 
 # path to tflite model
+# model_path = "model/model_update_1.tflite"
+
+# Google Cloud Storage bucket details
+bucket_name = "healthy-eats-bucket"
 model_path = "model/model_update_1.tflite"
 
 # list of class name
@@ -36,8 +41,26 @@ class_names = [
 ]
 
 # initialize tflite interpreter
-interpreter = tf.lite.Interpreter(model_path=model_path)
-interpreter.allocate_tensors()
+# interpreter = tf.lite.Interpreter(model_path=model_path)
+# interpreter.allocate_tensors()
+
+interpreter = None
+
+def download_model():
+    # download model from cloud storage bucket
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(model_path)
+    model_content = blob.download_as_bytes()
+
+    # save model locally
+    with open("model_update_1.tflite", "wb") as f:
+        f.write(model_content)
+
+def load_model():
+    global interpreter
+    interpreter = tf.lite.Interpreter(model_path="model_update_1.tflite")
+    interpreter.allocate_tensors()
 
 def preprocess_image(image):
 
@@ -71,6 +94,12 @@ def predict_image(image):
     prediction_prob = output_data[0][prediction_idx]
 
     return predicted_class_name, prediction_prob
+
+@app.on_event("startup")
+async def startup_event():
+    # download and load model into memory when application started
+    download_model()
+    load_model()
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):

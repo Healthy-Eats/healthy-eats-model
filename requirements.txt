@@ -5,3 +5,4 @@ tensorflow
 uvicorn
 gunicorn
 python-multipart
+google-cloud-storage
